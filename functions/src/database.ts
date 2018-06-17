@@ -25,7 +25,7 @@ const getKey = function(email){
 const getBalance = function(uid){
     return new Promise(async function(resolve, reject){
         const accountRef = admin.database().ref("/users/" + uid + "/account")
-        
+
         await accountRef.once('value')
         .then((snapshot) => {
             const acc = JSON.parse(JSON.stringify(snapshot))
@@ -39,8 +39,8 @@ const getBalance = function(uid){
 // Add log entry
 const executeTransaction = function(type, title, description, amount, initiatorId, receiverId, created){
     return new Promise(async function(resolve, reject){
-        const initiatorLogRef = admin.database().ref("/users/" + initiatorId + "/account/log")
-        const receiverLogRef  = admin.database().ref("/users/" + receiverId  + "/account/log")
+        const initiatorLogRef = admin.database().ref("/users/" + initiatorId + "/log")
+        const receiverLogRef  = admin.database().ref("/users/" + receiverId  + "/log")
         
         // Update initiator's log
         await initiatorLogRef.push({
@@ -61,6 +61,8 @@ const executeTransaction = function(type, title, description, amount, initiatorI
             "initiatorId" : initiatorId,
             "created" : created
         })
+
+        // TODO: Update balances
 
         resolve("Transaction Complete")
     })
