@@ -24,7 +24,9 @@ const getKey = function(email){
 // Get balance
 const getBalance = function(uid){
     return new Promise(async function(resolve, reject){
-        await admin.database().ref("/users/" + uid + "/account").once('value')
+        const accountRef = admin.database().ref("/users/" + uid + "/account")
+        
+        await accountRef.once('value')
         .then((snapshot) => {
             const acc = JSON.parse(JSON.stringify(snapshot))
             resolve(acc.balance)
