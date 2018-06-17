@@ -3,14 +3,11 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 
 const app = express();
-// app.disable("x-powered-by");
+const database = require("./database");
+
+app.disable("x-powered-by");
 admin.initializeApp();
 
-var errHander = function(err){
-    console.log(err)
-}
-
-const database = require("./database");
 
 // Send money
 app.get('/transactions', (req, res) => {
@@ -24,14 +21,28 @@ app.get('/transactions', (req, res) => {
 
     console.log(type + " " + title)
 
-    // Check for the balance
+    // Check request validity
+    // TODO: Check validity using timestamp
+
+    // Check for the balance before the transaction
     database.getBalance(initiatorId)
-    .then((a) => {
-        console.log("balance: " + a)
-        res.status(200).send(a)
+    .then((balance) => {
+        console.log("balance: " + balance)
+        console.log(balance - amount)
+
+        if (amount < balance){
+            // Execute the transaction
+            database.executeTransaction( type, title, description, amount, initiatorId, receiverId, created)
+            console.log("Transaction Completed")
+            res.status(200).send("Transaction Completed")
+        } else {
+            console.log("Transaction Not Completed")
+            res.status(200).send("Transaction Not Completed")
+        }
     })
 
 });
+
 
 
 exports.route = functions.https.onRequest(app);
