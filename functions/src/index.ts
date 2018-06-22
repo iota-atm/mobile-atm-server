@@ -14,14 +14,14 @@ admin.initializeApp();
 // Send money
 app.post('/transactions', (req, res) => {
     const type        = req.body.type;
+    const isSend      = type.toLowerCase() === "send";
+
     const title       = req.body.title;
     const description = req.body.description;
     const amount      = req.body.amount;
-    const initiatorId = req.body.initiatorId;
-    const receiverId  = req.body.receiverId;
+    const initiatorId = isSend ? req.body.initiatorId : req.body.receiverId;
+    const receiverId  = isSend ? req.body.receiverId : req.body.initiatorId;
     const created     = req.body.created
-
-    console.log(type + " " + title)
 
     // Check request validity
     // TODO: Check validity using timestamp
@@ -40,8 +40,8 @@ app.post('/transactions', (req, res) => {
 
             // TODO: Send push notification to both Initiator & Receiver
         } else {
-            console.log("Transaction Not Completed")
-            res.status(200).send("Transaction Not Completed")
+            console.log("Not enough balance!")
+            res.status(200).send("Not enough balance!")
         }
     })
 

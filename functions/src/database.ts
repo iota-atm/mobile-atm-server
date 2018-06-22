@@ -29,7 +29,7 @@ const getBalance = function(uid){
         await accountRef.once('value')
         .then((snapshot) => {
             const acc = JSON.parse(JSON.stringify(snapshot))
-            resolve(acc.balance)
+            resolve(parseInt(acc.balance))
         }).catch(err => {
             reject(err)
         })
@@ -37,13 +37,13 @@ const getBalance = function(uid){
 }
 
 // Add log entry
-const executeTransaction = function(type, title, description, amount, initiatorId, receiverId, created){
+const executeTransaction = function(type, title, description, amount:number, initiatorId, receiverId, created){
     return new Promise(async function(resolve, reject){
-        const initiatorLogRef = admin.database().ref("/users/" + initiatorId + "/log")
-        const receiverLogRef  = admin.database().ref("/users/" + receiverId  + "/log")
+        const initiatorRef = admin.database().ref("/users/" + initiatorId)
+        const receiverRef  = admin.database().ref("/users/" + receiverId)
         
         // Update initiator's log
-        await initiatorLogRef.push({
+        await initiatorRef.child('log').push({
             "type" : "SEND",
             "title" : title,
             "description" : description,
@@ -53,7 +53,7 @@ const executeTransaction = function(type, title, description, amount, initiatorI
         })
 
         // Update receiver's log
-        await receiverLogRef.push({
+        await receiverRef.child('log').push({
             "type" : "RECEIVE",
             "title" : title,
             "description" : description,
@@ -62,8 +62,46 @@ const executeTransaction = function(type, title, description, amount, initiatorI
             "created" : created
         })
 
-        // TODO: Update balances
+        // Update balance of the initiator
+        await getBalance(initiatorId)
+        .then((balance) => {
+            const a = (parseInt(balance.toString()) - parseInt(amount.toString()))
+            initiatorRef.child("account").child('balance').set(a)
+            .then(() => {
+               console.log("DONE")
+            })
+            .catch(err => {
+                console.log(err)
+            });
+        })
+        .then(()=> {
+            console.log("done")
+        })
+        .catch(err => {
+            console.log(err)
+        })
 
+
+        // Update balance of the recieve
+        await getBalance(receiverId)
+        .then((balance) => {
+            const a = (parseInt(balance.toString()) + parseInt(amount.toString()))
+            receiverRef.child("account").child('balance').set(a)
+            .then(() => {
+               console.log("DONE")
+            })
+            .catch(err => {
+                console.log(err)
+            });
+        })
+        .then(()=> {
+            console.log("done")
+        })
+        .catch(err => {
+            console.log(err)
+        })
+
+        
         resolve("Transaction Complete")
     })
 }
