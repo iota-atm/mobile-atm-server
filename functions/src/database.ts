@@ -25,7 +25,6 @@ const getKey = function(email){
 const getBalance = function(uid){
     return new Promise(async function(resolve, reject){
         const accountRef = admin.database().ref("/users/" + uid + "/account")
-
         await accountRef.once('value')
         .then((snapshot) => {
             const acc = JSON.parse(JSON.stringify(snapshot))
@@ -65,8 +64,8 @@ const executeTransaction = function(type, title, description, amount:number, ini
         // Update balance of the initiator
         await getBalance(initiatorId)
         .then((balance) => {
-            const a = (parseInt(balance.toString()) - parseInt(amount.toString()))
-            initiatorRef.child("account").child('balance').set(a)
+            const newBalance = (parseInt(balance.toString()) - parseInt(amount.toString()))
+            initiatorRef.child("account").child('balance').set(newBalance)
             .then(() => {
                console.log("DONE")
             })
@@ -85,8 +84,8 @@ const executeTransaction = function(type, title, description, amount:number, ini
         // Update balance of the recieve
         await getBalance(receiverId)
         .then((balance) => {
-            const a = (parseInt(balance.toString()) + parseInt(amount.toString()))
-            receiverRef.child("account").child('balance').set(a)
+            const newBalance = (parseInt(balance.toString()) + parseInt(amount.toString()))
+            receiverRef.child("account").child('balance').set(newBalance)
             .then(() => {
                console.log("DONE")
             })
