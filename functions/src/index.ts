@@ -36,17 +36,34 @@ app.post('/transactions', (req, res) => {
             // Execute the transaction
             database.executeTransaction( type, title, description, amount, initiatorId, receiverId, created)
             console.log("Transaction Completed")
-            res.status(200).send("Transaction Completed")
+            respondSuccess("Transaction completed", res)
 
             // TODO: Send push notification to both Initiator & Receiver
         } else {
             console.log("Not enough balance!")
-            res.status(200).send("Not enough balance!")
+            respondError("Not enough balance", res)
         }
     })
 
 });
 
+// Success respond
+function respondSuccess(msg, res) {
+    res.status(200).send(JSON.stringify({ 
+        status : "SUCCESS",
+        message: msg,
+        timestamp : new Date()
+    }));
+}
+
+// Error respond
+function respondError(msg, res){
+    res.status(200).send(JSON.stringify({ 
+        status : "FAILED",
+        message: msg,
+        timestamp : new Date() 
+    }));
+}
 
 
 exports.route = functions.https.onRequest(app);
