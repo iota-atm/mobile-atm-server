@@ -35,14 +35,81 @@ const getBalance = function(uid){
     })
 }
 
+// Get spending limit
+const getSpendingLimit = function(uid){
+    return new Promise(async function(resolve, reject){
+        const accountRef = admin.database().ref("/users/" + uid + "/account")
+        await accountRef.once('value')
+        .then((snapshot) => {
+            const acc = JSON.parse(JSON.stringify(snapshot))
+            resolve(parseInt(acc.spendingLimit))
+        }).catch(err => {
+            reject(err)
+        })
+    })
+}
+
+// Get Account
+const getAccountInfo = function(uid){
+    return new Promise(async function(resolve, reject){
+        const accountRef = admin.database().ref("/users/" + uid + "/account")
+        await accountRef.once('value')
+        .then((snapshot) => {
+            const acc = JSON.parse(JSON.stringify(snapshot))
+            resolve(acc)
+        }).catch(err => {
+            reject(err)
+        })
+    })
+}
+
 // Add log entry
 const executeTransaction = function(type, title, description, amount:number, initiatorId, receiverId, created){
     return new Promise(async function(resolve, reject){
         const initiatorRef = admin.database().ref("/users/" + initiatorId)
         const receiverRef  = admin.database().ref("/users/" + receiverId)
-        
+
+        // Update balance of the initiator
+        getBalance(initiatorId)
+        .then((balance) => {
+            const newBalance = (parseInt(balance.toString()) - parseInt(amount.toString()))
+            initiatorRef.child("account").child('balance').set(newBalance)
+            .then(() => {
+                console.log("Updated initiator's balance")
+            })
+            .catch(err => {
+                console.log(err)
+            });
+        })
+        .then(()=> {
+            // Balance updated
+        })
+        .catch(err => {
+            console.log(err)
+        })
+
+        // Update balance of the recieve
+        getBalance(receiverId)
+        .then((balance) => {
+            const newBalance = (parseInt(balance.toString()) + parseInt(amount.toString()))
+            receiverRef.child("account").child('balance').set(newBalance)
+            .then(() => {
+                console.log("Updated receiver's balance")
+            })
+            .catch(err => {
+                console.log(err)
+            });
+        })
+        .then(()=> {
+            // Balance updated
+        })
+        .catch(err => {
+            console.log(err)
+        })
+
+
         // Update initiator's log
-        await initiatorRef.child('log').push({
+        initiatorRef.child('log').push({
             "type" : "SEND",
             "title" : title,
             "description" : description,
@@ -52,7 +119,7 @@ const executeTransaction = function(type, title, description, amount:number, ini
         })
 
         // Update receiver's log
-        await receiverRef.child('log').push({
+        receiverRef.child('log').push({
             "type" : "RECEIVE",
             "title" : title,
             "description" : description,
@@ -61,53 +128,16 @@ const executeTransaction = function(type, title, description, amount:number, ini
             "created" : created
         })
 
-        // Update balance of the initiator
-        await getBalance(initiatorId)
-        .then((balance) => {
-            const newBalance = (parseInt(balance.toString()) - parseInt(amount.toString()))
-            initiatorRef.child("account").child('balance').set(newBalance)
-            .then(() => {
-               console.log("DONE")
-            })
-            .catch(err => {
-                console.log(err)
-            });
-        })
-        .then(()=> {
-            console.log("done")
-        })
-        .catch(err => {
-            console.log(err)
-        })
-
-
-        // Update balance of the recieve
-        await getBalance(receiverId)
-        .then((balance) => {
-            const newBalance = (parseInt(balance.toString()) + parseInt(amount.toString()))
-            receiverRef.child("account").child('balance').set(newBalance)
-            .then(() => {
-               console.log("DONE")
-            })
-            .catch(err => {
-                console.log(err)
-            });
-        })
-        .then(()=> {
-            console.log("done")
-        })
-        .catch(err => {
-            console.log(err)
-        })
-
-        
         resolve("Transaction Complete")
+
     })
 }
 
 module.exports = {
     getKey: getKey,
     getBalance: getBalance,
-    executeTransaction: executeTransaction
+    executeTransaction: executeTransaction,
+    getSpendingLimit: getSpendingLimit,
+    getAccountInfo: getAccountInfo
 }
 

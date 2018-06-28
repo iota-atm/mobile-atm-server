@@ -11,6 +11,10 @@ app.disable("x-powered-by");
 admin.initializeApp();
 
 
+app.post('/aa', (req, res) => {
+    console.log("dsfdsfsf")
+})
+
 // Send money
 app.post('/transactions', (req, res) => {
     const type        = req.body.type;
@@ -26,26 +30,44 @@ app.post('/transactions', (req, res) => {
     // Check request validity
     // TODO: Check validity using timestamp
 
-    // Check for the balance before the transaction
-    database.getBalance(initiatorId)
-    .then((balance) => {
-        console.log("balance: " + balance)
-        console.log(balance - amount)
+    // database.getAccount(initiatorId)
+    // .then((acc) => {
+    //     console.log("Spending limit new: " + acc.spendingLimit)
+    // })
 
-        if (amount < balance){
-            // Execute the transaction
-            database.executeTransaction( type, title, description, amount, initiatorId, receiverId, created)
-            console.log("Transaction Completed")
-            respondSuccess("Transaction completed", res)
+    
+    Promise.all([database.getAccountInfo(initiatorId), database.getAccountInfo(receiverId)])
+    .then((results) => {
+        console.log(results)
+        // Load account information
+        const initiatorAcc = results[0]
+        const receiverAcc  = results[1]
 
-            // TODO: Send push notification to both Initiator & Receiver
-        } else {
-            console.log("Not enough balance!")
+        // Check for balance
+        if (amount > initiatorAcc.balance){
             respondError("Not enough balance", res)
+            return
         }
+
+        // Check for spending limit
+        if (initiatorAcc.spendingLimitEnable == true && amount > initiatorAcc.spendingLimit) {
+            console.log("DIFF: " + (amount - initiatorAcc.spendingLimit))
+            respondError("Amount is more than the spending limit.", res)
+            return
+        }
+
+        // Execute the transaction
+        database.executeTransaction( type, title, description, amount, initiatorId, receiverId, created)
+        respondSuccess("Transaction completed!", res)
+
+        // TODO: Send push notification to both Initiator & Receiver
+
+    }).catch((err) => {
+        console.log(err)
     })
 
 });
+
 
 // Success respond
 function respondSuccess(msg, res) {
