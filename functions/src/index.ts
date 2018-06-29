@@ -9,11 +9,9 @@ const database = require("./database");
 app.use(bodyParser.json({ type: 'application/json' }))
 app.disable("x-powered-by");
 admin.initializeApp();
+// Get the Messaging service for the default app
+var messaging = admin.messaging();
 
-
-app.post('/aa', (req, res) => {
-    console.log("dsfdsfsf")
-})
 
 // Send money
 app.post('/transactions', (req, res) => {
@@ -56,11 +54,15 @@ app.post('/transactions', (req, res) => {
             return
         }
 
+        
         // Execute the transaction
         database.executeTransaction( type, title, description, amount, initiatorId, receiverId, created)
-        respondSuccess("Transaction completed!", res)
+        
+        var msg = "Transaction completed";
+        respondSuccess(msg, res)
 
         // TODO: Send push notification to both Initiator & Receiver
+        sendPushNotification(msg, "qsp8g1byz5hs84xzDywfCtmc2P72")
 
     }).catch((err) => {
         console.log(err)
@@ -85,6 +87,28 @@ function respondError(msg, res){
         message: msg,
         timestamp : new Date() 
     }));
+}
+
+// Send push notification
+function sendPushNotification(msg, uid){
+    const topic = uid;
+
+    const message = {
+        data: {
+            name: 'sdfsdf',
+        },
+        topic: 'qsp8g1byz5hs84xzDywfCtmc2P72'
+    };
+
+    // Send a message to devices subscribed to the provided topic.
+    admin.messaging().send(message)
+    .then((response) => {
+        // Response is a message ID string.
+        console.log('Successfully sent message:', response);
+    })
+    .catch((error) => {
+        console.log('Error sending message:', error);
+    });
 }
 
 
