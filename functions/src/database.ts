@@ -73,7 +73,7 @@ const executeTransaction = function(type, title, description, amount:number, ini
         getBalance(initiatorId)
         .then((balance) => {
             const newBalance = (parseInt(balance.toString()) - parseInt(amount.toString()))
-            initiatorRef.child("account").child('balance').set(parseFloat(newBalance.toString()).toFixed(2))
+            initiatorRef.child("account").child('balance').set(newBalance)
             .then(() => {
                 console.log("Updated initiator's balance")
             })
@@ -92,7 +92,7 @@ const executeTransaction = function(type, title, description, amount:number, ini
         getBalance(receiverId)
         .then((balance) => {
             const newBalance = (parseInt(balance.toString()) + parseInt(amount.toString()))
-            receiverRef.child("account").child('balance').set(parseFloat(newBalance.toString()).toFixed(2))
+            receiverRef.child("account").child('balance').set(newBalance)
             .then(() => {
                 console.log("Updated receiver's balance")
             })
