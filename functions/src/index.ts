@@ -54,15 +54,13 @@ app.post('/transactions', (req, res) => {
             return
         }
 
-        
         // Execute the transaction
         database.executeTransaction( type, title, description, amount, initiatorId, receiverId, created)
-        
-        var msg = "Transaction completed";
-        respondSuccess(msg, res)
+        respondSuccess("Transaction successfull", res)
 
-        // TODO: Send push notification to both Initiator & Receiver
-        sendPushNotification(msg, "qsp8g1byz5hs84xzDywfCtmc2P72")
+        // Send push notifications
+        sendPushNotification("Money sent", `${amount}  send from your account` , initiatorId)
+        sendPushNotification("Money received", `${amount} received from your account`, receiverId)
 
     }).catch((err) => {
         console.log(err)
@@ -90,24 +88,27 @@ function respondError(msg, res){
 }
 
 // Send push notification
-function sendPushNotification(msg, uid){
-    const topic = uid;
+function sendPushNotification(messageTitle, messageBody, uid){
 
-    const message = {
-        data: {
-            name: 'sdfsdf',
+    // Message content
+    const payload = {
+        notification: {
+            title: messageTitle,
+            body: messageBody
         },
-        topic: 'qsp8g1byz5hs84xzDywfCtmc2P72'
-    };
+        data: {
+            title: messageTitle,
+            body: messageBody
+        }
+    }
 
-    // Send a message to devices subscribed to the provided topic.
-    admin.messaging().send(message)
-    .then((response) => {
-        // Response is a message ID string.
-        console.log('Successfully sent message:', response);
-    })
-    .catch((error) => {
-        console.log('Error sending message:', error);
+    // Send to topic (uid)
+    admin.messaging().sendToTopic(uid, payload)
+    .then(function(response){
+         console.log('Notification sent successfully:', response);
+    }) 
+    .catch(function(error){
+         console.log('Notification sent failed:', error);
     });
 }
 
